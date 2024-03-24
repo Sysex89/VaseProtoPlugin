@@ -9,6 +9,7 @@ struct VaseProto : Module {
 	};
 	enum InputIds {
 		PITCH_INPUT,
+		LED_INPUT,
 		NUM_INPUTS
 	};
 	enum OutputIds {
@@ -17,6 +18,7 @@ struct VaseProto : Module {
 	};
 	enum LightIds {
 		BLINK_LIGHT,
+		OUR_LIGHT,
 		NUM_LIGHTS
 	};
 
@@ -34,24 +36,32 @@ struct VaseProto : Module {
 
 	void process(const ProcessArgs& args) override {
 	    // Get pitch -- taken from plugin guide
-	    float pitch = params[PITCH_PARAM].getValue();
+	    float pitch = params[1].getValue();
 	    pitch += inputs[PITCH_INPUT].getVoltage();
 	    pitch = clamp(pitch, -4.f, 4.f);
 	    // Default pitch is C4 - 261.6256Hz
 	    float freq = dsp::FREQ_C4 * std::pow(2.f, pitch);
-
+		
         // Set Freq, and output.
 	    osc.SetFreq(freq);
 	    outputs[SINE_OUTPUT].setVoltage(osc.Process());
 
 	    blinkPhase += args.sampleTime;
+		bluePhase += args.sampleTime * 2.f;
 	    if (blinkPhase >= 1.f)
 	        blinkPhase -= 1.f;
+		if (bluePhase >= 1.f)
+	        bluePhase -= 1.f;
 	    lights[BLINK_LIGHT].setBrightness(blinkPhase < .5f ? 1.f : 0.f);
+		//lights[1].setBrightness(bluePhase < .5f ? 1.f : 0.f);
+		lights[OUR_LIGHT].setBrightness(bluePhase < .5f ? 1.f : 0.f);
+		//bool buttonPressed = params[PARAM1].getValue() > 0.f;
 	}
 
 	daisysp::Oscillator osc;
+
 	float blinkPhase;
+	float bluePhase;
 };
 
 
@@ -72,6 +82,7 @@ struct VaseProtoWidget : ModuleWidget {
 		addOutput(createOutputCentered<PJ301MPort>(mm2px(Vec(15.24, 108.713)), module, VaseProto::SINE_OUTPUT));
 
 		addChild(createLightCentered<MediumLight<RedLight>>(mm2px(Vec(15.24, 25.81)), module, VaseProto::BLINK_LIGHT));
+		addChild(createLightCentered<LargeLight<BlueLight>>(mm2px(Vec(15.24, 90)), module, VaseProto::OUR_LIGHT));
 	}
 };
 
